@@ -7,7 +7,7 @@ A full-stack web application for managing insurance customers, policies, claims,
 ## Tech Stack
 
 ### Frontend
-- Next.js 15
+- Next.js 16
 - TypeScript
 - Tailwind CSS
 - React Hook Form
@@ -20,10 +20,14 @@ A full-stack web application for managing insurance customers, policies, claims,
 - Express.js
 
 ### Database
-- Supabase PostgreSQL
+- PostgreSQL
+- Supabase PostgreSQL hosting
+- Prisma schema
 
 ### Authentication
-- Supabase Auth
+- JWT authentication
+- bcrypt password hashing
+- Resend password reset email
 
 ### File Storage
 - Supabase Storage
@@ -83,6 +87,50 @@ Runs on
 ```
 http://localhost:5000
 ```
+
+### Day 2 Database Setup
+
+Run the SQL in `server/database/day2-database-schema.sql` in your Supabase SQL editor.
+It creates:
+
+- `app_users` for registered platform users
+- `auth_sessions` for revocable JWT sessions
+- `password_reset_tokens` for one-time reset links
+- `customers`, `policies`, `premium_payments`, `claims`, `claim_notes`, `documents`, and `audit_logs` for the insurance workflow
+
+The matching Prisma data model is available at `server/prisma/schema.prisma`.
+
+Copy the example environment files before running the app:
+
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env.local
+```
+
+Fill in `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL`.
+
+### Authentication API
+
+Base URL:
+
+```txt
+http://localhost:5000/api/auth
+```
+
+Endpoints:
+
+- `POST /register`
+- `POST /login`
+- `GET /me`
+- `POST /logout`
+- `POST /forgot-password`
+- `POST /reset-password`
+
+Supported authentication roles:
+
+- `admin` for administrators
+- `agent` for insurance agents
+- `customer` for customers
 
 ---
 

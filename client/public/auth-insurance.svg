@@ -1,0 +1,21 @@
+<svg width="720" height="500" viewBox="0 0 720 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Insurance security dashboard</title>
+  <desc id="desc">A stylized insurance dashboard with a shield, policy documents, and analytics.</desc>
+  <rect width="720" height="500" rx="36" fill="#EAF7F4"/>
+  <rect x="54" y="58" width="612" height="384" rx="30" fill="#FFFFFF" stroke="#B8DAD5" stroke-width="3"/>
+  <rect x="90" y="96" width="260" height="300" rx="22" fill="#12333D"/>
+  <rect x="118" y="130" width="156" height="18" rx="9" fill="#B7E5DC"/>
+  <rect x="118" y="166" width="190" height="12" rx="6" fill="#6EA9A1"/>
+  <rect x="118" y="190" width="150" height="12" rx="6" fill="#6EA9A1"/>
+  <rect x="118" y="245" width="66" height="96" rx="12" fill="#F2B461"/>
+  <rect x="204" y="218" width="66" height="123" rx="12" fill="#0F766E"/>
+  <rect x="290" y="270" width="32" height="71" rx="10" fill="#DB7657"/>
+  <path d="M470 112L586 154V234C586 306 540 363 470 382C400 363 354 306 354 234V154L470 112Z" fill="#0F766E"/>
+  <path d="M470 146L552 176V235C552 289 520 331 470 348C420 331 388 289 388 235V176L470 146Z" fill="#FFFFFF" fill-opacity="0.18"/>
+  <path d="M432 242L459 269L512 210" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="396" y="384" width="156" height="18" rx="9" fill="#12333D"/>
+  <rect x="426" y="414" width="96" height="12" rx="6" fill="#6EA9A1"/>
+  <circle cx="110" cy="408" r="18" fill="#DB7657"/>
+  <circle cx="610" cy="92" r="22" fill="#F2B461"/>
+  <path d="M592 408C606 394 629 394 643 408" stroke="#DB7657" stroke-width="10" stroke-linecap="round"/>
+</svg>
