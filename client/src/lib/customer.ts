@@ -28,6 +28,55 @@ export type CustomerHistoryEvent = {
   tone: "success" | "warning" | "info";
 };
 
+export type PolicyStatus = "draft" | "active" | "expired" | "cancelled";
+export type PolicyType = "life" | "health" | "auto" | "home" | "travel" | "business";
+
+export type Policy = {
+  id: string;
+  customerId: string;
+  policyNumber: string;
+  policyType: PolicyType;
+  premiumAmount: number;
+  startDate: string;
+  endDate: string;
+  status: PolicyStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PolicyCreatePayload = {
+  policyType: PolicyType;
+  premiumAmount: number;
+  startDate: string;
+  endDate: string;
+  status?: PolicyStatus;
+};
+
+export type Claim = {
+  id: string;
+  policyId: string | null;
+  claimAmount: number;
+  reason: string;
+  status: "submitted" | "approved" | "rejected";
+  submissionDate: string;
+};
+
+export type PaymentRecord = {
+  id: string;
+  policyId: string | null;
+  amount: number;
+  paymentMethod: string;
+  paymentStatus: "paid" | "pending" | "failed";
+  paymentDate: string;
+};
+
+export type DocumentEntry = {
+  id: string;
+  fileName: string;
+  filePath: string;
+  uploadedAt: string;
+};
+
 export type CustomerListResponse = {
   customers: Customer[];
   page: number;
@@ -127,6 +176,58 @@ export const customerApi = {
       `/customers/${customerId}/history`,
       token
     ),
+
+  mePolicies: (token: string) =>
+    request<{ policies: Policy[] }>(`/customers/me/policies`, token),
+
+  meDashboard: (token: string) =>
+    request<{
+      customer: Customer;
+      policies: Policy[];
+      claims: Claim[];
+      documents: DocumentEntry[];
+      premiumPayments: PaymentRecord[];
+    }>(`/customers/dashboard`, token),
+
+  getPolicies: (token: string, customerId: string) =>
+    request<{ policies: Policy[] }>(`/customers/${customerId}/policies`, token),
+
+  createPolicy: (
+    token: string,
+    customerId: string,
+    body: PolicyCreatePayload
+  ) =>
+    request<{ policy: Policy }>(`/customers/${customerId}/policies`, token, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  submitClaim: (
+    token: string,
+    body: { claimAmount: number; reason: string }
+  ) =>
+    request<{ claim: Claim }>("/customers/claims", token, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  recordPayment: (
+    token: string,
+    body: { amount: number; paymentMethod: string }
+  ) =>
+    request<{ payment: PaymentRecord }>("/customers/payments", token, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  uploadDocument: (
+    token: string,
+    body: { fileName: string; filePath: string }
+  ) =>
+    request<{ document: DocumentEntry }>("/customers/documents", token, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   me: (token: string) =>
     request<{ customer: Customer }>("/customers/me", token),

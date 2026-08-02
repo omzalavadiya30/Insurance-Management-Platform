@@ -358,7 +358,7 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
           const destination =
             response.data.user.role === "customer"
               ? "/profile"
-              : "/customers";
+              : "/dashboard";
           router.push(destination);
         }
       }
@@ -382,7 +382,7 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
           const destination =
             response.data.user.role === "customer"
               ? "/profile"
-              : "/customers";
+              : "/dashboard";
           router.push(destination);
         }
       }

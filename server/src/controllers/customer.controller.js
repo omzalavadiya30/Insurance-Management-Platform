@@ -198,11 +198,62 @@ const uploadDocument = async (req, res, next) => {
   }
 };
 
+const getOwnPolicies = async (req, res, next) => {
+  try {
+    const customer = await customerService.ensureCustomerProfile(req.auth.user);
+    const policies = await customerService.getPoliciesByCustomerId(customer.id);
+
+    return res.json({
+      success: true,
+      data: { policies },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getCustomerPolicies = async (req, res, next) => {
+  try {
+    const data = await customerService.getCustomerPolicies({
+      actor: req.auth.user,
+      customerId: req.params.id,
+    });
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const createPolicyForCustomer = async (req, res, next) => {
+  try {
+    const data = await customerService.createPolicyForCustomer({
+      actor: req.auth.user,
+      customerId: req.params.id,
+      ...req.validatedBody,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Policy created successfully.",
+      data,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createCustomer,
+  createPolicyForCustomer,
   getCustomer,
   getCustomerHistory,
+  getCustomerPolicies,
   getDashboard,
+  getOwnPolicies,
   getOwnProfile,
   listCustomers,
   recordPayment,

@@ -480,13 +480,76 @@ const uploadCustomerDocument = async ({ userId, fileName, filePath }) => {
   return getCustomerDashboard({ userId });
 };
 
+const getPoliciesByCustomerId = async (customerId) => {
+  return storage.findPoliciesByCustomerId(customerId);
+};
+
+const getCustomerPolicies = async ({ actor, customerId }) => {
+  const customer = await storage.findCustomerById(customerId);
+
+  if (!customer) {
+    throw new HttpError(404, "Customer not found.");
+  }
+
+  await ensureCustomerAccess({ actor, customer });
+
+  const policies = await storage.findPoliciesByCustomerId(customer.id);
+  return { policies };
+};
+
+const createPolicyForCustomer = async ({
+  actor,
+  customerId,
+  policyType,
+  premiumAmount,
+  startDate,
+  endDate,
+  status = "active",
+}) => {
+  ensureManager(actor);
+
+  const customer = await storage.findCustomerById(customerId);
+
+  if (!customer) {
+    throw new HttpError(404, "Customer not found.");
+  }
+
+  const policy = await storage.createPolicy({
+    customerId: customer.id,
+    policyType,
+    policyNumber: `POL-${Date.now().toString(36).toUpperCase()}`,
+    premiumAmount,
+    startDate,
+    endDate,
+    status,
+  });
+
+  await storage.recordAuditLog({
+    actorUserId: actor.id,
+    action: "policy.create",
+    entityType: "policy",
+    entityId: policy.id,
+    metadata: {
+      customerId: customer.id,
+      policyNumber: policy.policyNumber,
+      policyType: policy.policyType,
+    },
+  });
+
+  return { policy };
+};
+
 module.exports = {
   createCustomerClaim,
   createManagedCustomer,
+  createPolicyForCustomer,
+  ensureCustomerProfile,
   getCustomerDashboard,
   getCustomerHistory,
+  getCustomerPolicies,
   getCustomerProfile,
   getOwnCustomerProfile,
+  getPoliciesByCustomerId,
   listCustomerProfiles,
   recordPremiumPayment,
   registerCustomerProfile,

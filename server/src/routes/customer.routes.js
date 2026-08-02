@@ -127,6 +127,40 @@ const customerSelfUpdateSchema = z
     message: "At least one profile field is required.",
   });
 
+const policyTypeSchema = z.enum(
+  ["life", "health", "auto", "home", "travel", "business"],
+  {
+    error: "Choose a valid policy type.",
+  }
+);
+
+const policyStatusSchema = z.enum(
+  ["draft", "active", "expired", "cancelled"],
+  {
+    error: "Policy status must be draft, active, expired, or cancelled.",
+  }
+);
+
+const policyDateSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, "Choose a valid date.");
+
+const policyCreateSchema = z
+  .object({
+    policyType: policyTypeSchema,
+    premiumAmount: z
+      .coerce.number()
+      .nonnegative("Premium amount must be zero or greater."),
+    startDate: policyDateSchema,
+    endDate: policyDateSchema,
+    status: policyStatusSchema.default("active"),
+  })
+  .refine((value) => value.endDate >= value.startDate, {
+    message: "Policy end date must be the same as or after the start date.",
+    path: ["endDate"],
+  });
+
 const customerListSchema = z.object({
   search: z.string().trim().max(80).optional().default(""),
   status: statusSchema.optional(),
@@ -197,6 +231,19 @@ router.post(
   authorize("customer"),
   validate(documentSchema),
   customerController.uploadDocument
+);
+
+router.get("/me/policies", authorize("customer"), customerController.getOwnPolicies);
+router.get(
+  "/:id/policies",
+  authorize("admin", "agent"),
+  customerController.getCustomerPolicies
+);
+router.post(
+  "/:id/policies",
+  authorize("admin", "agent"),
+  validate(policyCreateSchema),
+  customerController.createPolicyForCustomer
 );
 
 router.get("/:id/history", customerController.getCustomerHistory);

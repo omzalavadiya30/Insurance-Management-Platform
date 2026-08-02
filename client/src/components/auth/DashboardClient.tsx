@@ -1,9 +1,9 @@
 "use client";
 
 import SidebarNav from "@/components/common/SidebarNav";
-import { FileText, Home, ListChecks, Settings2, ShieldCheck, Users } from "lucide-react";
+import { BarChart4, CreditCard, FileText, Folder, Home, ShieldCheck, Settings2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ComponentType, SVGProps, useEffect, useState } from "react";
+import { ComponentType, SVGProps, useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   AuthRole,
@@ -13,6 +13,12 @@ import {
   getStoredSession,
   saveSession,
 } from "@/lib/auth";
+import {
+  Customer,
+  CustomerStatus,
+  CustomerListResponse,
+  customerApi,
+} from "@/lib/customer";
 
 const roleDashboard: Record<
   AuthRole,
@@ -100,18 +106,47 @@ const dashboardSections: Array<{
 }> = [
   { key: "Dashboard", label: "Dashboard", Icon: Home },
   { key: "Customers", label: "Customers", Icon: Users },
-  { key: "Insurance", label: "Insurance", Icon: ShieldCheck },
-  { key: "Reports", label: "Reports", Icon: FileText },
-  { key: "Vehicle Docs", label: "Vehicle Docs", Icon: ListChecks },
+  { key: "Policies", label: "Policies", Icon: ShieldCheck },
+  { key: "Claims", label: "Claims", Icon: FileText },
+  { key: "Premiums", label: "Premiums", Icon: CreditCard },
+  { key: "Documents", label: "Documents", Icon: Folder },
+  { key: "Reports", label: "Reports", Icon: BarChart4 },
   { key: "Settings", label: "Settings", Icon: Settings2 },
 ];
 
 export default function DashboardClient() {
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [isCustomerListLoading, setIsCustomerListLoading] = useState(false);
   const [activeSection, setActiveSection] = useState("Dashboard");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<CustomerStatus | "">("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const loadCustomers = useCallback(
+    async (token: string, currentPage = 1) => {
+      setIsCustomerListLoading(true);
+
+      try {
+        const response = await customerApi.list(token, {
+          search,
+          status: status || undefined,
+          page: currentPage,
+          limit: 10,
+        });
+        setCustomers(response.data?.customers || []);
+        setTotal(response.data?.total || 0);
+        setPage(response.data?.page || currentPage);
+      } finally {
+        setIsCustomerListLoading(false);
+      }
+    },
+    [search, status]
+  );
 
   useEffect(() => {
     const storedSession = getStoredSession();
@@ -133,6 +168,13 @@ export default function DashboardClient() {
           };
           saveSession(refreshedSession);
           setSession(refreshedSession);
+
+          if (refreshedSession.user.role === "customer") {
+            router.replace("/profile");
+            return;
+          }
+
+          await loadCustomers(refreshedSession.token, 1);
         }
       } catch {
         clearSession();
@@ -144,24 +186,18 @@ export default function DashboardClient() {
     };
 
     loadProfile();
-  }, [router]);
+  }, [loadCustomers, router]);
 
   const handleLogout = async () => {
-    if (!session) {
-      return;
-    }
-
-    setError("");
     const toastId = toast.loading("Signing out...");
 
     try {
-      await authApi.logout(session.token);
+      if (session) {
+        await authApi.logout(session.token);
+      }
       toast.success("Logged out successfully.", { id: toastId });
     } catch {
-      setError("The server could not confirm logout, so this browser was cleared.");
-      toast.error("API logout failed, but this browser session was cleared.", {
-        id: toastId,
-      });
+      toast.error("Logout failed. Clearing session locally.", { id: toastId });
     } finally {
       clearSession();
       router.replace("/login");
@@ -197,6 +233,30 @@ export default function DashboardClient() {
         : "Manage customers, review history, and control CRM workflows for your team."
       : `Viewing ${activeSection} section for your insurance workflow.`;
 
+  const loadCustomerDetails = async (customerId: string) => {
+    if (!session) {
+      return;
+    }
+
+    try {
+      const response = await customerApi.getById(session.token, customerId);
+      setSelectedCustomer(response.data?.customer || null);
+      setActiveSection("Customers");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to load customer details.");
+    }
+  };
+
+  const handleCustomerSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!session) {
+      return;
+    }
+
+    await loadCustomers(session.token, 1);
+  };
+
   return (
     <main className="min-h-screen bg-[#edf2f6] text-[#15222f]">
       <div className="grid min-h-screen lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -223,10 +283,18 @@ export default function DashboardClient() {
 
             </div>
             <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-3">
-              <button className="h-11 rounded-2xl border border-[#d9e2ea] bg-white px-4 text-sm font-black text-[#0f766e] transition hover:bg-[#eef7f7]">
+              <button
+                type="button"
+                onClick={() => setActiveSection("Customers")}
+                className="h-11 rounded-2xl border border-[#d9e2ea] bg-white px-4 text-sm font-black text-[#0f766e] transition hover:bg-[#eef7f7]"
+              >
                 Client ID
               </button>
-              <button className="h-11 rounded-2xl border border-[#0f766e] bg-[#0f766e] px-4 text-sm font-black text-white transition hover:bg-[#0b5f59]">
+              <button
+                type="button"
+                onClick={() => router.push("/policies")}
+                className="h-11 rounded-2xl border border-[#0f766e] bg-[#0f766e] px-4 text-sm font-black text-white transition hover:bg-[#0b5f59]"
+              >
                 New Policy
               </button>
               <button
@@ -282,17 +350,103 @@ export default function DashboardClient() {
                 {activeSection === "Customers" && (
                   <div className="space-y-5 p-5">
                     <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fbfd] p-6">
-                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Customer pipeline</p>
-                      <p className="mt-3 text-sm text-[#64748b]">Customer CRM access for profiles, policy history, and renewals.</p>
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Customer management</p>
+                      <p className="mt-3 text-sm text-[#64748b]">Search customers, review account details, and manage customer records from a single dashboard.</p>
                     </div>
-                    <div className="grid gap-5 lg:grid-cols-2">
+                    <div className="rounded-3xl border border-[#d9e2ea] p-5">
+                      <form className="grid gap-3 sm:grid-cols-[1.5fr_1fr_auto]" onSubmit={handleCustomerSearch}>
+                        <input
+                          type="text"
+                          value={search}
+                          onChange={(event) => setSearch(event.target.value)}
+                          placeholder="Search customers by name, email, or code"
+                          className="min-h-12 w-full rounded-2xl border border-[#cbd5e1] bg-[#f8fafc] px-4 text-sm text-[#102a43] outline-none transition focus:border-[#0f766e] focus:ring-4 focus:ring-[#a7f3d0]/50"
+                        />
+                        <select
+                          value={status}
+                          onChange={(event) => setStatus(event.target.value as CustomerStatus | "")}
+                          className="min-h-12 w-full rounded-2xl border border-[#cbd5e1] bg-white px-4 text-sm text-[#102a43] outline-none transition focus:border-[#0f766e] focus:ring-4 focus:ring-[#a7f3d0]/50"
+                        >
+                          <option value="">All statuses</option>
+                          <option value="active">Active</option>
+                          <option value="disabled">Disabled</option>
+                        </select>
+                        <button
+                          type="submit"
+                          className="min-h-12 rounded-2xl bg-[#0f766e] px-5 text-sm font-black uppercase text-white transition hover:bg-[#0c5f55]"
+                        >
+                          Search
+                        </button>
+                      </form>
+                    </div>
+                    <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
                       <div className="rounded-3xl border border-[#d9e2ea] p-5">
-                        <p className="text-sm font-black text-[#102a43]">Latest leads</p>
-                        <p className="mt-3 text-sm text-[#64748b]">Review new customer requests, validate documents, and assign follow-up tasks.</p>
+                        <div className="mb-4 flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Customer list</p>
+                            <h3 className="mt-2 text-xl font-black text-[#102a43]">{total || 0} customers</h3>
+                          </div>
+                          <p className="text-sm text-[#64748b]">Page {page}</p>
+                        </div>
+                        <div className="space-y-3">
+                          {isCustomerListLoading ? (
+                            <p className="text-sm text-[#64748b]">Loading customer records...</p>
+                          ) : customers.length === 0 ? (
+                            <p className="text-sm text-[#64748b]">No customers found. Adjust the filters or try a different search term.</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {customers.map((customer) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  onClick={() => loadCustomerDetails(customer.id)}
+                                  className="w-full rounded-3xl border border-[#e2e8f0] bg-[#f8fafc] px-4 py-4 text-left transition hover:border-[#0f766e] hover:bg-white"
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                      <p className="font-black text-[#102a43]">{customer.fullName}</p>
+                                      <p className="mt-1 text-sm text-[#64748b]">{customer.email}</p>
+                                    </div>
+                                    <span className="rounded-full bg-[#e0f2fe] px-3 py-1 text-xs font-bold uppercase text-[#0369a1]">
+                                      {customer.status}
+                                    </span>
+                                  </div>
+                                  <p className="mt-3 text-sm text-[#475569]">{customer.customerCode || "Customer ID: " + customer.id}</p>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="rounded-3xl border border-[#d9e2ea] p-5">
-                        <p className="text-sm font-black text-[#102a43]">Open policies</p>
-                        <p className="mt-3 text-sm text-[#64748b]">Track customer policies currently active and expiring this quarter.</p>
+                        <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Selected customer</p>
+                        {selectedCustomer ? (
+                          <div className="mt-5 space-y-4">
+                            <div>
+                              <p className="text-sm text-[#64748b]">Name</p>
+                              <p className="mt-1 font-black text-[#102a43]">{selectedCustomer.fullName}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-[#64748b]">Email</p>
+                              <p className="mt-1 text-[#102a43]">{selectedCustomer.email}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-[#64748b]">Phone</p>
+                              <p className="mt-1 text-[#102a43]">{selectedCustomer.phone || "Not provided"}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-[#64748b]">Address</p>
+                              <p className="mt-1 text-[#102a43]">{selectedCustomer.address || "Not provided"}</p>
+                            </div>
+                            <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fafc] p-4">
+                              <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Policy count</p>
+                              <p className="mt-2 text-2xl font-black text-[#102a43]">—</p>
+                              <p className="mt-1 text-sm text-[#64748b]">Open the customer record to review policies and account status.</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-5 text-sm text-[#64748b]">Select a customer from the list to review details here.</p>
+                        )}
                       </div>
                     </div>
                   </div>
