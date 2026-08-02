@@ -83,6 +83,37 @@ const getCustomerHistory = async (req, res, next) => {
   }
 };
 
+const getOwnPayments = async (req, res, next) => {
+  try {
+    const data = await customerService.getOwnPremiumPayments({
+      actor: req.auth.user,
+    });
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getCustomerPayments = async (req, res, next) => {
+  try {
+    const data = await customerService.getCustomerPayments({
+      actor: req.auth.user,
+      customerId: req.params.id,
+    });
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const getOwnProfile = async (req, res, next) => {
   try {
     const data = await customerService.getOwnCustomerProfile({
@@ -252,7 +283,9 @@ module.exports = {
   getCustomer,
   getCustomerHistory,
   getCustomerPolicies,
+  getCustomerPayments,
   getDashboard,
+  getOwnPayments,
   getOwnPolicies,
   getOwnProfile,
   listCustomers,

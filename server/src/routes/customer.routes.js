@@ -233,7 +233,13 @@ router.post(
   customerController.uploadDocument
 );
 
+router.get("/me/payments", authorize("customer"), customerController.getOwnPayments);
 router.get("/me/policies", authorize("customer"), customerController.getOwnPolicies);
+router.get(
+  "/:id/payments",
+  authorize("admin", "agent"),
+  customerController.getCustomerPayments
+);
 router.get(
   "/:id/policies",
   authorize("admin", "agent"),

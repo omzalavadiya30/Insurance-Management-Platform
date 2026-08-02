@@ -180,6 +180,9 @@ export const customerApi = {
   mePolicies: (token: string) =>
     request<{ policies: Policy[] }>(`/customers/me/policies`, token),
 
+  mePayments: (token: string) =>
+    request<{ premiumPayments: PaymentRecord[] }>(`/customers/me/payments`, token),
+
   meDashboard: (token: string) =>
     request<{
       customer: Customer;
@@ -188,6 +191,9 @@ export const customerApi = {
       documents: DocumentEntry[];
       premiumPayments: PaymentRecord[];
     }>(`/customers/dashboard`, token),
+
+  getPayments: (token: string, customerId: string) =>
+    request<{ premiumPayments: PaymentRecord[] }>(`/customers/${customerId}/payments`, token),
 
   getPolicies: (token: string, customerId: string) =>
     request<{ policies: Policy[] }>(`/customers/${customerId}/policies`, token),

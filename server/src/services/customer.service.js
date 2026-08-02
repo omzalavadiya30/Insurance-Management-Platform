@@ -484,6 +484,30 @@ const getPoliciesByCustomerId = async (customerId) => {
   return storage.findPoliciesByCustomerId(customerId);
 };
 
+const getCustomerPayments = async ({ actor, customerId }) => {
+  const customer = await storage.findCustomerById(customerId);
+
+  if (!customer) {
+    throw new HttpError(404, "Customer not found.");
+  }
+
+  await ensureCustomerAccess({ actor, customer });
+
+  const premiumPayments = await storage.findPremiumPaymentsByCustomerId(customer.id);
+  return { premiumPayments };
+};
+
+const getOwnPremiumPayments = async ({ actor }) => {
+  const customer = await storage.findCustomerByUserId(actor.id);
+
+  if (!customer) {
+    throw new HttpError(404, "Customer profile not found.");
+  }
+
+  const premiumPayments = await storage.findPremiumPaymentsByCustomerId(customer.id);
+  return { premiumPayments };
+};
+
 const getCustomerPolicies = async ({ actor, customerId }) => {
   const customer = await storage.findCustomerById(customerId);
 
@@ -546,9 +570,11 @@ module.exports = {
   ensureCustomerProfile,
   getCustomerDashboard,
   getCustomerHistory,
+  getCustomerPayments,
   getCustomerPolicies,
   getCustomerProfile,
   getOwnCustomerProfile,
+  getOwnPremiumPayments,
   getPoliciesByCustomerId,
   listCustomerProfiles,
   recordPremiumPayment,
