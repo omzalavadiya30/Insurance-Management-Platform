@@ -2,6 +2,7 @@ const cors = require("cors");
 const express = require("express");
 const env = require("./config/env");
 const authRoutes = require("./routes/auth.routes");
+const customerRoutes = require("./routes/customer.routes");
 const { errorHandler, notFound } = require("./middleware/error-handler");
 
 const app = express();
@@ -22,6 +23,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/customers", customerRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

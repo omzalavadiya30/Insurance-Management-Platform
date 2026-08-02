@@ -1,7 +1,9 @@
 "use client";
 
+import SidebarNav from "@/components/common/SidebarNav";
+import { FileText, Home, ListChecks, Settings2, ShieldCheck, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { ComponentType, SVGProps, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   AuthRole,
@@ -27,7 +29,13 @@ const roleDashboard: Record<
       { label: "Premium collection", value: "Rs 42.8L", tone: "bg-[#fff4e1]" },
       { label: "Claim approvals", value: "76", tone: "bg-[#eef2ff]" },
     ],
-    tasks: ["Manage employees", "Assign claims", "Generate reports"],
+    tasks: [
+      "Manage employees",
+      "Manage customers",
+      "Create insurance policies",
+      "Assign claims",
+      "Generate reports",
+    ],
   },
   agent: {
     label: "Insurance Agent",
@@ -36,7 +44,13 @@ const roleDashboard: Record<
       { label: "Policies created", value: "64", tone: "bg-[#fff4e1]" },
       { label: "Claims in review", value: "19", tone: "bg-[#eef2ff]" },
     ],
-    tasks: ["Register customers", "Create policies", "Verify documents"],
+    tasks: [
+      "Register customers",
+      "Create policies",
+      "Verify customer documents",
+      "Review claims",
+      "Update policy information",
+    ],
   },
   customer: {
     label: "Customer",
@@ -45,15 +59,59 @@ const roleDashboard: Record<
       { label: "Premiums due", value: "1", tone: "bg-[#fff4e1]" },
       { label: "Claims tracked", value: "2", tone: "bg-[#eef2ff]" },
     ],
-    tasks: ["View policies", "Pay premiums", "Submit claims"],
+    tasks: [
+      "View policies",
+      "Download policy documents",
+      "Pay premiums",
+      "Upload claim documents",
+      "Submit claims",
+      "Track claim status",
+    ],
   },
 };
+
+const quickActions = [
+  {
+    title: "Customer Management",
+    description: "Manage customer profiles, review history, and keep contact information up to date.",
+  },
+  {
+    title: "Policy Management",
+    description: "Create, renew, and monitor policies with premium and expiry visibility.",
+  },
+  {
+    title: "Claim Management",
+    description: "Review claims, verify documents, and handle approvals or rejections.",
+  },
+  {
+    title: "Premium Tracking",
+    description: "Track premium payments, due dates, and overdue alerts for customer accounts.",
+  },
+  {
+    title: "Document Management",
+    description: "Manage identity and policy documents with secure upload and download workflows.",
+  },
+];
+
+const dashboardSections: Array<{
+  key: string;
+  label: string;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+}> = [
+  { key: "Dashboard", label: "Dashboard", Icon: Home },
+  { key: "Customers", label: "Customers", Icon: Users },
+  { key: "Insurance", label: "Insurance", Icon: ShieldCheck },
+  { key: "Reports", label: "Reports", Icon: FileText },
+  { key: "Vehicle Docs", label: "Vehicle Docs", Icon: ListChecks },
+  { key: "Settings", label: "Settings", Icon: Settings2 },
+];
 
 export default function DashboardClient() {
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeSection, setActiveSection] = useState("Dashboard");
 
   useEffect(() => {
     const storedSession = getStoredSession();
@@ -130,109 +188,176 @@ export default function DashboardClient() {
   }
 
   const currentRole = roleDashboard[session.user.role];
+  const sectionTitle = activeSection === "Dashboard" ? "Overview" : activeSection;
+  const roleBadge = session.user.role === "customer" ? "Customer" : "Admin / Agent";
+  const sectionSubtitle =
+    activeSection === "Dashboard"
+      ? session.user.role === "customer"
+        ? "Track your policy, update your profile, and submit claims from your personal portal."
+        : "Manage customers, review history, and control CRM workflows for your team."
+      : `Viewing ${activeSection} section for your insurance workflow.`;
 
   return (
-    <main className="min-h-screen bg-[#eef3f6] text-[#15222f]">
-      <header className="border-b border-[#d6e1ea] bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#bd6230]">
-              Insurance Management
-            </p>
-            <h1 className="mt-2 text-2xl font-black text-[#102a43]">
-              Welcome, {session.user.fullName}
-            </h1>
-          </div>
-          <button
-            className="h-10 rounded-md border border-[#cfdbe5] bg-white px-5 text-sm font-black text-[#17313d] transition hover:border-[#0f766e] hover:text-[#0f766e]"
-            onClick={handleLogout}
-            type="button"
-          >
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-6xl px-5 py-8">
-        {error && (
-          <div className="mb-5 rounded-md border border-[#f3b8a9] bg-[#fff4f0] px-4 py-3 text-sm font-semibold text-[#a23b24]">
-            {error}
-          </div>
-        )}
-
-        <div className="grid gap-5 md:grid-cols-3">
-          {currentRole.metrics.map((metric) => (
-            <article
-              key={metric.label}
-              className={`${metric.tone} rounded-lg border border-white p-6 shadow-[0_14px_35px_rgba(21,34,47,0.08)]`}
-            >
-              <p className="text-sm font-bold text-[#5e7180]">
-                {metric.label}
-              </p>
-              <p className="mt-3 text-4xl font-black text-[#102a43]">
-                {metric.value}
-              </p>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
-          <section className="rounded-lg border border-[#dfe7ef] bg-white p-6 shadow-[0_14px_35px_rgba(21,34,47,0.08)]">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.16em] text-[#0f766e]">
-                  Authentication
+    <main className="min-h-screen bg-[#edf2f6] text-[#15222f]">
+      <div className="grid min-h-screen lg:grid-cols-[280px_minmax(0,1fr)]">
+        <SidebarNav items={dashboardSections} selectedKey={activeSection} onSelect={setActiveSection} />
+        <section className="px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-[#d9e2ea] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">
+                  {activeSection}
                 </p>
-                <h2 className="mt-2 text-xl font-black text-[#102a43]">
-                  Session is active
-                </h2>
+                <span className="rounded-full border border-[#cbd5e1] bg-[#f8fafc] px-3 py-1 text-xs font-black uppercase text-[#0f766e]">
+                  {roleBadge}
+                </span>
               </div>
-              <span className="w-fit rounded-md bg-[#effbf7] px-4 py-2 text-sm font-black text-[#0f5f58]">
-                {currentRole.label}
-              </span>
-            </div>
+              <h1 className="mt-2 text-3xl font-black text-[#102a43]">
+                Welcome back, {session.user.fullName}
+              </h1>
+              <p className="mt-2 text-sm text-[#64748b]">
+                {activeSection === "Dashboard"
+                  ? "This is your tailored portal for role-based insurance operations."
+                  : `You are viewing the ${activeSection} section for your insurance workspace.`}
+              </p>
 
-            <div className="mt-6 grid gap-3">
-              {[
-                ["Email", session.user.email],
-                ["Account status", session.user.status],
-                ["Session expires", new Date(session.expiresAt).toLocaleString()],
-              ].map(([label, value]) => (
-                <div
-                  key={label}
-                  className="flex flex-col gap-1 rounded-md border border-[#edf1f5] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <span className="text-sm font-semibold text-[#6a7f90]">
-                    {label}
-                  </span>
-                  <span className="break-all text-sm font-black text-[#17313d]">
-                    {value}
-                  </span>
-                </div>
-              ))}
             </div>
-          </section>
+            <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-3">
+              <button className="h-11 rounded-2xl border border-[#d9e2ea] bg-white px-4 text-sm font-black text-[#0f766e] transition hover:bg-[#eef7f7]">
+                Client ID
+              </button>
+              <button className="h-11 rounded-2xl border border-[#0f766e] bg-[#0f766e] px-4 text-sm font-black text-white transition hover:bg-[#0b5f59]">
+                New Policy
+              </button>
+              <button
+                className="h-11 rounded-2xl border border-[#d9e2ea] bg-white px-4 text-sm font-black text-[#0f766e] transition hover:bg-[#eef7f7]"
+                onClick={handleLogout}
+                type="button"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
 
-          <aside className="rounded-lg border border-[#dfe7ef] bg-[#12333d] p-6 text-white shadow-[0_14px_35px_rgba(21,34,47,0.12)]">
-            <p className="text-sm font-black uppercase tracking-[0.16em] text-[#b7e5dc]">
-              Next modules
-            </p>
-            <div className="mt-5 space-y-4">
-              {currentRole.tasks.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-md border border-white/12 bg-white/8 px-4 py-3"
-                >
-                  <p className="font-black">{item}</p>
-                  <p className="mt-1 text-sm text-[#c8d9de]">
-                    Ready for the upcoming development days.
-                  </p>
+          <div className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
+            <div className="space-y-5">
+              <section className="overflow-hidden rounded-3xl border border-[#d9e2ea] bg-white shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+                <div className="border-b border-[#edf2f7] px-5 py-6">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#0f766e]">
+                      {sectionTitle}
+                    </p>
+                    <h2 className="mt-2 text-2xl font-black text-[#102a43]">
+                      {activeSection}
+                    </h2>
+                    <p className="mt-2 text-sm text-[#64748b]">
+                      {sectionSubtitle}
+                    </p>
+                  </div>
                 </div>
-              ))}
+
+                {activeSection === "Dashboard" && (
+                  <div className="space-y-5 p-5">
+                    <div className="grid gap-5 lg:grid-cols-3">
+                      {currentRole.metrics.map((metric) => (
+                        <div key={metric.label} className={`rounded-3xl border border-[#e2e8f0] p-5 ${metric.tone}`}>
+                          <p className="text-sm text-[#475569]">{metric.label}</p>
+                          <p className="mt-3 text-3xl font-black text-[#102a43]">{metric.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fafc] p-5">
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Role tasks</p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        {currentRole.tasks.map((task) => (
+                          <div key={task} className="rounded-3xl bg-white p-4 shadow-sm">
+                            <p className="font-black text-[#102a43]">{task}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === "Customers" && (
+                  <div className="space-y-5 p-5">
+                    <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fbfd] p-6">
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Customer pipeline</p>
+                      <p className="mt-3 text-sm text-[#64748b]">Customer CRM access for profiles, policy history, and renewals.</p>
+                    </div>
+                    <div className="grid gap-5 lg:grid-cols-2">
+                      <div className="rounded-3xl border border-[#d9e2ea] p-5">
+                        <p className="text-sm font-black text-[#102a43]">Latest leads</p>
+                        <p className="mt-3 text-sm text-[#64748b]">Review new customer requests, validate documents, and assign follow-up tasks.</p>
+                      </div>
+                      <div className="rounded-3xl border border-[#d9e2ea] p-5">
+                        <p className="text-sm font-black text-[#102a43]">Open policies</p>
+                        <p className="mt-3 text-sm text-[#64748b]">Track customer policies currently active and expiring this quarter.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === "Insurance" && (
+                  <div className="p-5">
+                    <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fbfd] p-6">
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Insurance overview</p>
+                      <p className="mt-3 text-sm text-[#64748b]">Review policy categories, coverage status, and upcoming renewals in one place.</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === "Reports" && (
+                  <div className="p-5">
+                    <div className="rounded-3xl border border-[#d9e2ea] p-6">
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Reports center</p>
+                      <p className="mt-3 text-sm text-[#64748b]">Generate claim summaries, premium reports, and customer engagement insights.</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === "Vehicle Docs" && (
+                  <div className="space-y-5 p-5">
+                    <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fbfd] p-6">
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Vehicle documents</p>
+                      <p className="mt-3 text-sm text-[#64748b]">Monitor registration, insurance, and PUC expiry status for your fleet.</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === "Settings" && (
+                  <div className="p-5">
+                    <div className="rounded-3xl border border-[#d9e2ea] bg-[#f8fbfd] p-6">
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#0f766e]">Workspace settings</p>
+                      <p className="mt-3 text-sm text-[#64748b]">Update your account settings, notification preferences, and security options.</p>
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
-          </aside>
-        </div>
-      </section>
+            <aside className="space-y-5">
+              <div className="rounded-3xl border border-[#d9e2ea] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+                <p className="text-xs uppercase tracking-[0.18em] text-[#0f766e]">Overdue Premium</p>
+                <div className="mt-5 rounded-3xl border border-[#f1f5f9] bg-[#fffbf4] p-5">
+                  <p className="text-sm text-[#7c5e36]">No data available in table</p>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-[#d9e2ea] bg-[#0f766e] p-5 text-white shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+                <p className="text-xs uppercase tracking-[0.18em] text-[#9ae6df]">Quick Actions</p>
+                <div className="mt-4 space-y-3">
+                  {quickActions.map((action) => (
+                    <div key={action.title} className="rounded-3xl bg-white/10 p-4">
+                      <p className="font-black text-white">{action.title}</p>
+                      <p className="mt-2 text-sm text-[#bae9e3]">{action.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

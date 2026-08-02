@@ -52,10 +52,16 @@ create table if not exists public.customers (
   phone text,
   address text,
   email text unique,
+  identity_type text,
+  identity_number text,
   status public.user_status not null default 'active',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.customers
+  add column if not exists identity_type text,
+  add column if not exists identity_number text;
 
 create table if not exists public.policies (
   id uuid primary key default gen_random_uuid(),

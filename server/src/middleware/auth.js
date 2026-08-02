@@ -48,7 +48,7 @@ const authenticate = async (req, res, next) => {
     }
 
     const tokenHash = hashToken(token);
-    const session = storage.findSessionByTokenHash(tokenHash);
+    const session = await storage.findSessionByTokenHash(tokenHash);
 
     if (!session || session.revokedAt) {
       throw new HttpError(401, "Your session is no longer active.");
@@ -59,11 +59,11 @@ const authenticate = async (req, res, next) => {
     }
 
     if (new Date(session.expiresAt).getTime() <= Date.now()) {
-      storage.revokeSessionById(session.id);
+      await storage.revokeSessionById(session.id);
       throw new HttpError(401, "Your session has expired.");
     }
 
-    const user = storage.findUserById(session.userId);
+    const user = await storage.findUserById(session.userId);
 
     if (!user || user.status !== "active") {
       throw new HttpError(401, "This account is not active.");
@@ -81,7 +81,7 @@ const authenticate = async (req, res, next) => {
     };
 
     if (env.nodeEnv !== "test") {
-      storage.upsertSessionLastSeen(session.id);
+      await storage.upsertSessionLastSeen(session.id);
     }
 
     return next();

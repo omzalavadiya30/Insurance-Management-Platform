@@ -16,12 +16,6 @@ export type AuthSession = {
   user: AuthUser;
 };
 
-export type AuthNotice = {
-  tone: "success" | "error" | "info";
-  title: string;
-  description?: string;
-};
-
 type ApiResponse<T> = {
   success: boolean;
   message?: string;
@@ -34,18 +28,20 @@ const API_URL =
   "http://localhost:5000/api";
 
 const STORAGE_KEY = "insurance_auth_session";
-const NOTICE_KEY = "insurance_auth_notice";
 
 class ApiError extends Error {
   details?: Array<{ field: string; message: string }>;
+  statusCode?: number;
 
   constructor(
     message: string,
-    details?: Array<{ field: string; message: string }>
+    details?: Array<{ field: string; message: string }>,
+    statusCode?: number
   ) {
     super(message);
     this.name = "ApiError";
     this.details = details;
+    this.statusCode = statusCode;
   }
 }
 
@@ -69,7 +65,8 @@ const request = async <T>(
   if (!response.ok || payload.success === false) {
     throw new ApiError(
       payload.message || "The request could not be completed.",
-      payload.details
+      payload.details,
+      response.status
     );
   }
 
@@ -127,30 +124,6 @@ export const authApi = {
 
 export const saveSession = (session: AuthSession) => {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-};
-
-export const savePendingNotice = (notice: AuthNotice) => {
-  window.sessionStorage.setItem(NOTICE_KEY, JSON.stringify(notice));
-};
-
-export const consumePendingNotice = (): AuthNotice | null => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const rawNotice = window.sessionStorage.getItem(NOTICE_KEY);
-
-  if (!rawNotice) {
-    return null;
-  }
-
-  window.sessionStorage.removeItem(NOTICE_KEY);
-
-  try {
-    return JSON.parse(rawNotice) as AuthNotice;
-  } catch {
-    return null;
-  }
 };
 
 export const getStoredSession = (): AuthSession | null => {

@@ -209,10 +209,6 @@ const validateAuthForm = (form: FormState, mode: AuthMode): FieldErrors => {
     errors.email = "Enter a valid email address.";
   }
 
-  if (mode === "reset" && form.token.trim().length < 20) {
-    errors.token = "Reset token is missing or incomplete.";
-  }
-
   if (requiresPassword && !form.password) {
     errors.password = "Password is required.";
   }
@@ -253,9 +249,6 @@ const mapApiErrors = (
     return nextErrors;
   }, {});
 };
-
-const getFirstError = (errors: FieldErrors) =>
-  Object.values(errors).find(Boolean) || "Please check the submitted fields.";
 
 export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
   const router = useRouter();
@@ -362,7 +355,11 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
           toast.success(`Welcome to the ${selectedRole.label.toLowerCase()} workspace.`, {
             id: toastId,
           });
-          router.push("/dashboard");
+          const destination =
+            response.data.user.role === "customer"
+              ? "/profile"
+              : "/customers";
+          router.push(destination);
         }
       }
 
@@ -382,7 +379,11 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
           toast.success(`${selectedRole.label} account created successfully.`, {
             id: toastId,
           });
-          router.push("/login");
+          const destination =
+            response.data.user.role === "customer"
+              ? "/profile"
+              : "/customers";
+          router.push(destination);
         }
       }
 
@@ -426,336 +427,266 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
   };
 
   return (
-    <main className="min-h-screen bg-[#eef3f6] text-[#15222f]">
-      <div className="grid min-h-screen lg:grid-cols-[minmax(0,0.88fr)_minmax(480px,1.12fr)]">
-        <aside className="relative hidden overflow-hidden bg-[#11353f] px-10 py-9 text-white lg:block">
-          <div className="absolute inset-x-0 top-0 h-1 bg-[#e7aa45]" />
-          <div className="mx-auto flex h-full max-w-155 flex-col justify-between gap-8">
-            <div className="flex items-center justify-between">
-              <Link href="/login" className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-[#0f766e] text-sm font-black">
-                  IM
-                </span>
-                <span className="text-sm font-bold tracking-wide">
-                  Insurance Management
-                </span>
-              </Link>
-              <span className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#bfe7dd]">
-                Day 2
-              </span>
+    <main className="min-h-screen bg-[#f4f7fb] text-[#15222f]">
+      <div className="grid min-h-screen lg:grid-cols-[1fr_1.12fr]">
+        <aside className="relative hidden overflow-hidden bg-[#082f3a] px-10 py-10 text-white lg:block">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[#1fb3a9]" />
+          <div className="mx-auto flex h-full max-w-3xl flex-col justify-between gap-8">
+            <div>
+              <div className="mb-8 flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-3xl bg-[#12a89a]/20 text-xl font-black text-[#e8f8f6]">
+                  IB
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-[#7fd8ce]">
+                    INSUREBOOK
+                  </p>
+                  <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#d9f1ef]">
+                    Technology Pvt Ltd
+                  </p>
+                </div>
+              </div>
+
+              <h2 className="max-w-[18rem] text-4xl font-black leading-tight text-white">
+                One platform for admin, agent, and customer workflows.
+              </h2>
+              <p className="mt-5 max-w-[22rem] text-sm leading-7 text-[#c8e7e0]">
+                Sign in or register with the correct role and continue to the tailored policy management portal.
+              </p>
             </div>
 
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#e7aa45]">
+            <div className="space-y-4 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-[0_24px_60px_rgba(4,41,48,0.16)]">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#7fd8ce]">
                 {selectedRole.label}
               </p>
-              <h2 className="mt-4 max-w-130 text-5xl font-black leading-[1.02]">
-                Secure access for insurance operations.
-              </h2>
-              <p className="mt-5 max-w-125 text-base leading-7 text-[#c7d9df]">
-                Role-based authentication for admins, agents, and customers with
-                JWT sessions, password reset email, and validated account data.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-white/10 bg-white/6 p-5">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-3">
                 {selectedRole.responsibilities.map((item) => (
-                  <div
-                    key={item}
-                    className="min-h-24 rounded-md border border-white/10 bg-white/[0.07] p-3"
-                  >
-                    <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#bfe7dd]">
-                      Access
-                    </p>
-                    <p className="mt-3 text-sm font-bold leading-5">{item}</p>
+                  <div key={item} className="rounded-3xl bg-[#0d434f]/70 p-4">
+                    <p className="text-sm font-semibold text-[#e5f8f5]">{item}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex items-center justify-between rounded-md bg-[#09252d] px-4 py-3">
-                <span className="text-sm text-[#c7d9df]">Current portal</span>
-                <span className="text-sm font-bold text-white">
-                  {selectedRole.metric}
-                </span>
+              <div className="mt-4 rounded-3xl bg-[#0c3f49]/80 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-[#a6f0e5]">Current portal</p>
+                <p className="mt-2 text-sm font-black text-white">{selectedRole.metric}</p>
               </div>
             </div>
-
-            <Image
-              src="/auth-insurance.svg"
-              alt="Insurance policy security dashboard"
-              width={560}
-              height={390}
-              priority
-              className="mx-auto h-auto w-full max-w-130"
-            />
           </div>
         </aside>
 
-        <section className="flex items-center justify-center px-4 py-6 sm:px-6 lg:px-10">
-          <div className="w-full max-w-140 rounded-lg border border-[#d7e1ea] bg-white p-5 shadow-[0_24px_70px_rgba(21,34,47,0.12)] sm:p-7">
-            <div className="mb-6 flex items-center justify-between gap-4 lg:hidden">
-              <Link
-                href="/login"
-                className="flex items-center gap-3 text-sm font-bold text-[#17313d]"
-              >
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-[#0f766e] text-sm text-white">
-                  IM
-                </span>
-                <span>Insurance Management</span>
-              </Link>
-              <span className="rounded-md border border-[#d8e2ea] px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#6a7f90]">
-                Auth
-              </span>
-            </div>
+        <section className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
+          <div className="w-full max-w-3xl rounded-[32px] border border-[#dbe6ef] bg-white p-8 shadow-[0_24px_70px_rgba(21,34,47,0.12)] sm:p-10">
+            <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-[#f0f4f8] bg-[#f8fbfd] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#395f69]">
+                  {copy.eyebrow}
+                </p>
+                <h1 className="mt-2 text-3xl font-black tracking-tight text-[#102a43] sm:text-4xl">
+                  {pageTitle}
+                </h1>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-[#526170]">
+                  {pageSubtitle}
+                </p>
+              </div>
 
-            <div className="mb-6">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#bd6230]">
-                {copy.eyebrow}
-              </p>
-              <h1 className="mt-3 text-3xl font-black leading-tight text-[#102a43] sm:text-4xl">
-                {pageTitle}
-              </h1>
-              <p className="mt-3 text-sm leading-6 text-[#5e7180]">
-                {pageSubtitle}
-              </p>
-            </div>
-
-            {(isLogin || isRegister) && (
-              <div className="mb-5 grid grid-cols-2 rounded-lg bg-[#edf3f5] p-1 text-sm font-bold">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Link
                   href="/login"
-                  className={`rounded-md px-4 py-2.5 text-center transition ${
+                  className={`inline-flex h-11 items-center justify-center rounded-xl border px-4 text-sm font-black transition ${
                     isLogin
-                      ? "bg-white text-[#0f766e] shadow-sm"
-                      : "text-[#667987] hover:text-[#17313d]"
+                      ? "border-[#0f766e] bg-[#0f766e] text-white shadow-sm"
+                      : "border-transparent bg-white text-[#0f766e] hover:bg-[#eef7f7]"
                   }`}
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className={`rounded-md px-4 py-2.5 text-center transition ${
+                  className={`inline-flex h-11 items-center justify-center rounded-xl border px-4 text-sm font-black transition ${
                     isRegister
-                      ? "bg-white text-[#0f766e] shadow-sm"
-                      : "text-[#667987] hover:text-[#17313d]"
+                      ? "border-[#0f766e] bg-[#0f766e] text-white shadow-sm"
+                      : "border-transparent bg-white text-[#0f766e] hover:bg-[#eef7f7]"
                   }`}
                 >
                   Register
                 </Link>
               </div>
-            )}
+            </div>
 
             {showsRoleSelector && (
-              <>
-                <div className="mb-3 rounded-md border border-[#dfe7ef] bg-[#f8fafc] px-3 py-2 text-sm font-semibold text-[#5e7180]">
-                  {roleHint}
-                </div>
+              <div className="mb-6 grid gap-3 sm:grid-cols-3">
+                {roleOrder.map((role) => {
+                  const config = roleConfig[role];
+                  const isSelected = form.role === role;
 
-                <div className="mb-5 grid gap-2 rounded-lg border border-[#dfe7ef] bg-[#f8fafc] p-2 sm:grid-cols-3">
-                  {roleOrder.map((role) => {
-                    const config = roleConfig[role];
-                    const isSelected = form.role === role;
-
-                    return (
-                      <button
-                        key={role}
-                        className={`min-h-20.5 rounded-md border px-3 py-3 text-left transition ${
-                          isSelected
-                            ? "border-[#12333d] bg-[#12333d] text-white shadow-sm"
-                            : "border-[#dfe7ef] bg-white text-[#546879] hover:border-[#0f766e] hover:text-[#12333d]"
-                        }`}
-                        onClick={() => updateRole(role)}
-                        type="button"
-                      >
-                        <span className="block text-sm font-black">
-                          {config.shortLabel}
-                        </span>
-                        <span
-                          className={`mt-2 block text-[0.68rem] font-bold uppercase tracking-[0.12em] ${
-                            isSelected ? "text-[#b7e5dc]" : "text-[#8a9aaa]"
-                          }`}
-                        >
-                          {config.badge}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            <form className="space-y-4" noValidate onSubmit={handleSubmit}>
-              {isRegister && (
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                    Full name
-                  </span>
-                  <input
-                    autoComplete="name"
-                    className={fieldClass("fullName")}
-                    onChange={updateField("fullName")}
-                    placeholder="Aarav Mehta"
-                    value={form.fullName}
-                  />
-                  {fieldMessage("fullName")}
-                </label>
-              )}
-
-              {(isLogin || isRegister || isForgot) && (
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                    Email address
-                  </span>
-                  <input
-                    autoComplete="email"
-                    className={fieldClass("email")}
-                    onChange={updateField("email")}
-                    placeholder="you@company.com"
-                    type="email"
-                    value={form.email}
-                  />
-                  {fieldMessage("email")}
-                </label>
-              )}
-
-              {isRegister && form.role === "customer" && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                      Phone
-                    </span>
-                    <input
-                      autoComplete="tel"
-                      className={fieldClass("phone")}
-                      onChange={updateField("phone")}
-                      placeholder="+91 98765 43210"
-                      value={form.phone}
-                    />
-                    {fieldMessage("phone")}
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                      Date of birth
-                    </span>
-                    <input
-                      className={fieldClass("dateOfBirth")}
-                      onChange={updateField("dateOfBirth")}
-                      type="date"
-                      value={form.dateOfBirth}
-                    />
-                    {fieldMessage("dateOfBirth")}
-                  </label>
-
-                  <label className="block sm:col-span-2">
-                    <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                      Address
-                    </span>
-                    <input
-                      autoComplete="street-address"
-                      className={fieldClass("address")}
-                      onChange={updateField("address")}
-                      placeholder="House, street, city"
-                      value={form.address}
-                    />
-                    {fieldMessage("address")}
-                  </label>
-                </div>
-              )}
-
-              {isReset && (
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                    Reset token
-                  </span>
-                  <input
-                    className={fieldClass("token")}
-                    onChange={updateField("token")}
-                    placeholder="Token from your reset email"
-                    value={form.token}
-                  />
-                  {fieldMessage("token")}
-                </label>
-              )}
-
-              {(isLogin || isRegister || isReset) && (
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                    Password
-                  </span>
-                  <div className="relative">
-                    <input
-                      autoComplete={isLogin ? "current-password" : "new-password"}
-                      className={`${fieldClass("password")} pr-10`}
-                      onChange={updateField("password")}
-                      placeholder="Enter your password"
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                    />
+                  return (
                     <button
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="absolute inset-y-0 right-3 flex items-center text-[#6a7f90] transition hover:text-[#15222f]"
-                      onClick={() => setShowPassword((current) => !current)}
+                      key={role}
+                      className={`rounded-[24px] border px-4 py-4 text-left transition ${
+                        isSelected
+                          ? "border-[#0f766e] bg-[#0f766e] text-white shadow-lg"
+                          : "border-[#dfe3ea] bg-white text-[#334155] hover:border-[#0f766e] hover:text-[#0f766e]"
+                      }`}
+                      onClick={() => updateRole(role)}
                       type="button"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      <span className="block text-sm font-black">{config.shortLabel}</span>
+                      <span className="mt-2 block text-xs uppercase tracking-[0.18em] text-[#64748b]">
+                        {config.badge}
+                      </span>
                     </button>
-                  </div>
-                  {fieldMessage("password")}
-                </label>
-              )}
+                  );
+                })}
+              </div>
+            )}
+
+            <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+              <div className="rounded-[28px] border border-[#edf2f7] bg-[#f8fbfd] p-6">
+                <div className="grid gap-4">
+                  {isRegister && (
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                        Full name
+                      </span>
+                      <input
+                        autoComplete="name"
+                        className={fieldClass("fullName")}
+                        onChange={updateField("fullName")}
+                        placeholder="Aarav Mehta"
+                        value={form.fullName}
+                      />
+                      {fieldMessage("fullName")}
+                    </label>
+                  )}
+
+                  {(isLogin || isRegister || isForgot) && (
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                        Email address
+                      </span>
+                      <input
+                        autoComplete="email"
+                        className={fieldClass("email")}
+                        onChange={updateField("email")}
+                        placeholder="you@company.com"
+                        type="email"
+                        value={form.email}
+                      />
+                      {fieldMessage("email")}
+                    </label>
+                  )}
+
+                  {isRegister && form.role === "customer" && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                          Phone
+                        </span>
+                        <input
+                          autoComplete="tel"
+                          className={fieldClass("phone")}
+                          onChange={updateField("phone")}
+                          placeholder="+91 98765 43210"
+                          value={form.phone}
+                        />
+                        {fieldMessage("phone")}
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                          Date of birth
+                        </span>
+                        <input
+                          className={fieldClass("dateOfBirth")}
+                          onChange={updateField("dateOfBirth")}
+                          type="date"
+                          value={form.dateOfBirth}
+                        />
+                        {fieldMessage("dateOfBirth")}
+                      </label>
+
+                      <label className="block sm:col-span-2">
+                        <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                          Address
+                        </span>
+                        <input
+                          autoComplete="street-address"
+                          className={fieldClass("address")}
+                          onChange={updateField("address")}
+                          placeholder="House, street, city"
+                          value={form.address}
+                        />
+                        {fieldMessage("address")}
+                      </label>
+                    </div>
+                  )}
+
+                  {(isLogin || isRegister || isReset) && (
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                        Password
+                      </span>
+                      <div className="relative">
+                        <input
+                          autoComplete={isLogin ? "current-password" : "new-password"}
+                          className={`${fieldClass("password")} pr-10`}
+                          onChange={updateField("password")}
+                          placeholder="Enter your password"
+                          type={showPassword ? "text" : "password"}
+                          value={form.password}
+                        />
+                        <button
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          className="absolute inset-y-0 right-3 flex items-center text-[#6a7f90] transition hover:text-[#102a43]"
+                          onClick={() => setShowPassword((current) => !current)}
+                          type="button"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {fieldMessage("password")}
+                    </label>
+                  )}
+
+                  {(isRegister || isReset) && (
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-bold text-[#24303f]">
+                        Confirm password
+                      </span>
+                      <div className="relative">
+                        <input
+                          autoComplete="new-password"
+                          className={`${fieldClass("confirmPassword")} pr-10`}
+                          onChange={updateField("confirmPassword")}
+                          placeholder="Repeat your password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={form.confirmPassword}
+                        />
+                        <button
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          className="absolute inset-y-0 right-3 flex items-center text-[#6a7f90] transition hover:text-[#102a43]"
+                          onClick={() => setShowConfirmPassword((current) => !current)}
+                          type="button"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {fieldMessage("confirmPassword")}
+                    </label>
+                  )}
+                </div>
+              </div>
 
               {(isRegister || isReset) && (
-                <div className="space-y-3">
-                  <label className="block">
-                    <span className="mb-1.5 block text-sm font-bold text-[#263f4d]">
-                      Confirm password
-                    </span>
-                    <div className="relative">
-                      <input
-                        autoComplete="new-password"
-                        className={`${fieldClass("confirmPassword")} pr-10`}
-                        onChange={updateField("confirmPassword")}
-                        placeholder="Repeat your password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={form.confirmPassword}
-                      />
-                      <button
-                        aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                        className="absolute inset-y-0 right-3 flex items-center text-[#6a7f90] transition hover:text-[#15222f]"
-                        onClick={() => setShowConfirmPassword((current) => !current)}
-                        type="button"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                    {fieldMessage("confirmPassword")}
-                  </label>
-
-                  <div>
-                    <div className="grid grid-cols-5 gap-1.5" aria-hidden="true">
-                      {[0, 1, 2, 3, 4].map((step) => (
-                        <span
-                          key={step}
-                          className={`h-1.5 rounded-sm ${
-                            passwordScore > step ? "bg-[#0f766e]" : "bg-[#dce5eb]"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-[#6a7f90]">
-                      At least 8 characters with uppercase, lowercase, number,
-                      and special character.
-                    </p>
-                  </div>
+                <div className="grid grid-cols-5 gap-1.5" aria-hidden="true">
+                  {[0, 1, 2, 3, 4].map((step) => (
+                    <span
+                      key={step}
+                      className={`h-1.5 rounded-sm ${
+                        passwordScore > step ? "bg-[#0f766e]" : "bg-[#dce5eb]"
+                      }`}
+                    />
+                  ))}
                 </div>
               )}
 
@@ -771,7 +702,7 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
               )}
 
               <button
-                className="h-11 w-full rounded-md bg-[#0f766e] px-5 text-sm font-black text-white shadow-[0_14px_30px_rgba(15,118,110,0.22)] transition hover:bg-[#0b5f59] disabled:cursor-not-allowed disabled:bg-[#8bbab5]"
+                className="h-12 w-full rounded-3xl bg-[#0f766e] px-5 text-sm font-black text-white shadow-[0_16px_40px_rgba(15,118,110,0.24)] transition hover:bg-[#0b5f59] disabled:cursor-not-allowed disabled:bg-[#8bbab5]"
                 disabled={isLoading}
                 type="submit"
               >
@@ -779,14 +710,11 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
               </button>
             </form>
 
-            <div className="mt-6 border-t border-[#edf1f5] pt-5 text-center text-sm text-[#667987]">
+            <div className="mt-6 border-t border-[#edf2f7] pt-5 text-center text-sm text-[#667987]">
               {isLogin && (
                 <p>
                   New to the platform?{" "}
-                  <Link
-                    className="font-black text-[#0f766e] hover:text-[#0b5f59]"
-                    href="/register"
-                  >
+                  <Link className="font-black text-[#0f766e] hover:text-[#0b5f59]" href="/register">
                     Create an account
                   </Link>
                 </p>
@@ -794,10 +722,7 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
               {isRegister && (
                 <p>
                   Already have access?{" "}
-                  <Link
-                    className="font-black text-[#0f766e] hover:text-[#0b5f59]"
-                    href="/login"
-                  >
+                  <Link className="font-black text-[#0f766e] hover:text-[#0b5f59]" href="/login">
                     Sign in
                   </Link>
                 </p>
@@ -805,10 +730,7 @@ export default function AuthShell({ mode, resetToken = "" }: AuthShellProps) {
               {(isForgot || isReset) && (
                 <p>
                   Remembered your password?{" "}
-                  <Link
-                    className="font-black text-[#0f766e] hover:text-[#0b5f59]"
-                    href="/login"
-                  >
+                  <Link className="font-black text-[#0f766e] hover:text-[#0b5f59]" href="/login">
                     Back to login
                   </Link>
                 </p>

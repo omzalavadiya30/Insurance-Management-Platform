@@ -37,7 +37,7 @@ const recordAuditLog = async ({
   entityId,
   metadata = {},
 }) => {
-  storage.recordAuditLog({ actorUserId, action, entityType, entityId, metadata });
+  await storage.recordAuditLog({ actorUserId, action, entityType, entityId, metadata });
 };
 
 const createSession = async ({ user, req }) => {
@@ -60,7 +60,7 @@ const createSession = async ({ user, req }) => {
   );
   const tokenHash = hashToken(token);
 
-  const session = storage.createSession({
+  const session = await storage.createSession({
     userId: user.id,
     jwtId,
     tokenHash,
@@ -88,7 +88,7 @@ const register = async ({
   const normalizedEmail = normalizeEmail(email);
   const requestedRole = allowedRoles.has(role) ? role : "customer";
 
-  const existingUser = storage.findUserByEmail(normalizedEmail);
+  const existingUser = await storage.findUserByEmail(normalizedEmail);
 
   if (existingUser) {
     throw new HttpError(409, "An account with this email already exists.");
@@ -96,7 +96,7 @@ const register = async ({
 
   const { passwordHash } = await hashPassword(password);
 
-  const user = storage.createUser({
+  const user = await storage.createUser({
     fullName: fullName.trim(),
     email: normalizedEmail,
     passwordHash,
@@ -105,7 +105,7 @@ const register = async ({
   });
 
   if (requestedRole === "customer") {
-    storage.createCustomerProfile({
+    await storage.createCustomerProfile({
       userId: user.id,
       fullName: user.fullName,
       email: user.email,
@@ -136,7 +136,7 @@ const login = async ({ email, password, role, req }) => {
   const normalizedEmail = normalizeEmail(email);
   const requestedRole = allowedRoles.has(role) ? role : null;
 
-  const user = storage.findUserByEmail(normalizedEmail);
+  const user = await storage.findUserByEmail(normalizedEmail);
 
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     throw new HttpError(401, "Invalid email or password.");
@@ -171,7 +171,7 @@ const login = async ({ email, password, role, req }) => {
 };
 
 const logout = async ({ sessionId }) => {
-  const revoked = storage.revokeSessionById(sessionId);
+  const revoked = await storage.revokeSessionById(sessionId);
 
   if (!revoked) {
     throw new HttpError(404, "Session not found.");
@@ -180,7 +180,7 @@ const logout = async ({ sessionId }) => {
 
 const requestPasswordReset = async ({ email }) => {
   const normalizedEmail = normalizeEmail(email);
-  const user = storage.findUserByEmail(normalizedEmail);
+  const user = await storage.findUserByEmail(normalizedEmail);
 
   if (!user || user.status !== "active") {
     return;
@@ -192,8 +192,8 @@ const requestPasswordReset = async ({ email }) => {
     Date.now() + env.resetTokenTtlMinutes * 60 * 1000
   );
 
-  storage.revokePasswordResetTokensForUser(user.id);
-  storage.createPasswordResetToken({ userId: user.id, tokenHash, expiresAt });
+  await storage.revokePasswordResetTokensForUser(user.id);
+  await storage.createPasswordResetToken({ userId: user.id, tokenHash, expiresAt });
 
   const resetUrl = `${env.clientAppUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
@@ -212,22 +212,22 @@ const requestPasswordReset = async ({ email }) => {
 
 const resetPassword = async ({ token, password }) => {
   const tokenHash = hashToken(token);
-  const resetToken = storage.findPasswordResetTokenByHash(tokenHash);
+  const resetToken = await storage.findPasswordResetTokenByHash(tokenHash);
 
   if (!resetToken) {
     throw new HttpError(400, "This reset link is invalid or has already been used.");
   }
 
-  const user = storage.findUserById(resetToken.userId);
+  const user = await storage.findUserById(resetToken.userId);
 
   if (!user || user.status !== "active") {
     throw new HttpError(403, "This account is not active.");
   }
 
   const { passwordHash } = await hashPassword(password);
-  storage.updateUserPassword(user.id, passwordHash);
-  storage.markPasswordResetTokenUsed(resetToken.id);
-  storage.revokeUserSessions(user.id);
+  await storage.updateUserPassword(user.id, passwordHash);
+  await storage.markPasswordResetTokenUsed(resetToken.id);
+  await storage.revokeUserSessions(user.id);
 
   await recordAuditLog({
     actorUserId: user.id,
